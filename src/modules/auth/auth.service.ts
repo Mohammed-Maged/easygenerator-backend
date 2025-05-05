@@ -97,7 +97,12 @@ export class AuthService {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
 
-      await this.validateSession(payload.refreshSessionId, payload.sub);
+      await this.validateSession(
+        payload.refreshSessionId,
+        payload.sub,
+        'refresh',
+      );
+
       const newTokens = await this.generateTokens(payload.sub);
       return newTokens;
     } catch {
@@ -105,13 +110,19 @@ export class AuthService {
     }
   }
 
-  async validateSession(sessionId: string, userId: string): Promise<void> {
+  async validateSession(
+    sessionId: string,
+    userId: string,
+    type: 'access' | 'refresh' = 'access',
+  ): Promise<void> {
     const key = `${AUTH_SESSION_PREFIX}${userId}`;
     const session = await this.cacheManager.get<string>(key);
 
     const [accessSessionId, refreshSessionId] = session?.split(':') ?? [];
 
-    if (!refreshSessionId || refreshSessionId !== sessionId) {
+    const expected = type === 'access' ? accessSessionId : refreshSessionId;
+
+    if (!expected || expected !== sessionId) {
       throw new UnauthorizedException('Session invalid or expired');
     }
   }

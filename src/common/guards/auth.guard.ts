@@ -44,7 +44,11 @@ export class AuthGuard implements CanActivate {
       const secret = this.configService.get<string>('JWT_ACCESS_SECRET');
       const payload = this.jwtService.verify(token, { secret });
 
-      await this.authService.validateSession(payload.sessionId, payload.sub);
+      await this.authService.validateSession(
+        payload.accessSessionId,
+        payload.sub,
+        'access',
+      );
       request['user'] = payload;
     } catch (err) {
       if (err.name === 'TokenExpiredError') {
